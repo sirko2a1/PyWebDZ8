@@ -4,6 +4,14 @@ from mongoengine import connect
 from models import Contact
 import argparse
 
+
+mongodb_username = "olek"
+mongodb_password = "09093"
+mongodb_database = "oleksander"
+
+connect(mongodb_database, host=f"mongodb+srv://{mongodb_username}:{mongodb_password}@oleksander.rvqf6dc.mongodb.net/")
+
+
 def send_email_to_contact(contact_id):
     print(f"Email sent to contact with ID: {contact_id}")
     sleep(1)
@@ -22,8 +30,6 @@ if __name__ == "__main__":
     parser.add_argument('--queue', type=str, default='contacts', help='RabbitMQ queue name')
     args = parser.parse_args()
 
-    connect("oleksander", host="mongodb+srv://olek:09093@oleksander.rvqf6dc.mongodb.net/")
-
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     channel = connection.channel()
 
@@ -31,5 +37,5 @@ if __name__ == "__main__":
 
     channel.basic_consume(queue=args.queue, on_message_callback=callback, auto_ack=True)
 
-    print(' [*] Waiting for messages. To exit, press CTRL+C')
+    print(' [*] Очікуємо повідомлення. Щоб вийти - натисність CTRL+C')
     channel.start_consuming()
