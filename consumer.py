@@ -1,41 +1,36 @@
 import pika
 from time import sleep
-from mongoengine import connect
-from models import Contact
-from bson import ObjectId
+from mongoengine import connect, Document, StringField, BooleanField
 import json
 
 
-def send_email_to_contact(contact_id):
-    print(f"Email надіслано на контакт з ID: {contact_id}")
-    sleep(1)
+connect("oleksander", host="mongodb+srv://olek:09093@oleksander.rvqf6dc.mongodb.net/")
 
-    contact = Contact.objects(id=ObjectId(contact_id)).first()
-    if contact:
-        contact.message_sent = True
-        contact.save()
+class Contact(Document):
+    full_name = StringField(required=True)
+    email = StringField(required=True)
+    message_sent = BooleanField(default=False)
+
+def send_email(contact_id):
+    contact = Contact.objects.get(id=contact_id)
+    contact.message_sent = True
+    contact.save()
+    print(f"Consumer: Email надіслано на контакт {contact_id}")
 
 def callback(ch, method, properties, body):
-    try:
-        message = json.loads(body.decode("utf-8"))
-        contact_id = message.get("contact_id")
-        
-        if contact_id:
-            send_email_to_contact(contact_id)
-        else:
-            print("Отримано невалідний contact_id")
-    except json.JSONDecodeError as e:
-        print(f"Помилка декодування повідомлення: {str(e)}")
+    message = json.loads(body)
+    contact_id = message['contact_id']
+    send_email(contact_id)
+    ch.basic_ack(delivery_tag=method.delivery_tag)
 
-if __name__ == "__main__":
-    connect("oleksander", host="mongodb+srv://olek:09093@oleksander.rvqf6dc.mongodb.net/")
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    channel = connection.channel()
+channel.queue_declare(queue='contacts_queue', durable=True)
 
-    channel.queue_declare(queue='contacts')
+channel.basic_qos(prefetch_count=1)
 
-    channel.basic_consume(queue='contacts', on_message_callback=callback, auto_ack=True)
+channel.basic_consume(queue='contacts_queue', on_message_callback=callback)
 
-    print(' [*] Очікування повідомлень. Для виходу натисніть CTRL+C')
-    channel.start_consuming()
+print("Consumer: Очікуємо повідомлень. Для виходу натисніть Ctrl+C")
+channel.start_consuming()
