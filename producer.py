@@ -3,6 +3,11 @@ import pika
 from faker import Faker
 from mongoengine import connect
 from models import Contact
+from bson import ObjectId
+
+
+def generate_contact_id(contact_data):
+    return str(ObjectId(contact_data.get("full_name", "")))
 
 def generate_fake_contacts(num_contacts):
     fake = Faker()
@@ -20,35 +25,36 @@ def generate_fake_contacts(num_contacts):
 
 def save_contacts_to_db(contacts):
     for contact_data in contacts:
-        # Виключимо _id зі словника перед створенням об'єкта Contact
-        contact_data.pop("_id", None)
         contact = Contact(**contact_data)
         contact.save()
 
-def publish_contacts_to_queue(contacts, channel):
-    for contact_data in contacts:
-        contact_id = str(contact_data["_id"])
-        channel.basic_publish(exchange='', routing_key='contacts', body=contact_id)
+def publish_contacts_to_queue(fake_contacts, channel):
+    for contact_data in fake_contacts:
+        contact_id = contact_data.get("_id", "")
+        message = {
+            "contact_id": contact_id,
+            "contact_data": contact_data
+        }
+        channel.basic_publish(
+            exchange='', routing_key='contact', body=json.dumps(message)
+        )
+        print(f"ID контакту: {contact_id} надіслано.")
+        
+
 
 if __name__ == "__main__":
-    try:
-        db_name = "oleksander"
-        connect(db_name, host="mongodb+srv://olek:09093@oleksander.rvqf6dc.mongodb.net/")
+    connect("oleksander", host="mongodb+srv://olek:09093@oleksander.rvqf6dc.mongodb.net/")
 
-        num_fake_contacts = 5
-        fake_contacts = generate_fake_contacts(num_fake_contacts)
+    num_fake_contacts = 5
+    fake_contacts = generate_fake_contacts(num_fake_contacts)
 
-        save_contacts_to_db(fake_contacts)
+    save_contacts_to_db(fake_contacts)
 
-        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-        channel = connection.channel()
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
 
-        channel.queue_declare(queue='contacts')
+    channel.queue_declare(queue='contact')
 
-        publish_contacts_to_queue(fake_contacts, channel)
+    publish_contacts_to_queue(fake_contacts, channel)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        if 'connection' in locals() and connection.is_open:
-            connection.close()
+    connection.close()
