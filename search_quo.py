@@ -1,34 +1,41 @@
+import re
 from mongoengine import connect
 from models import Quote, Author
 
 def search_quotes(command):
-    if command.startswith("name:"):
-        author_name = command.split(":", 1)[1].strip()
-        author = Author.objects(fullname=author_name).first()
+    command_pattern = re.compile(r"^(name|tag|tags|exit):(.+)$", re.IGNORECASE)
+    match = command_pattern.match(command)
+
+    if not match:
+        if command.lower() == "exit":
+            return None
+        else:
+            return "Invalid command format."
+
+    action, value = match.groups()
+
+    if action == "name":
+        author = Author.objects(fullname=value).first()
         if author:
             quotes = Quote.objects(author=author)
-            return quotes
+            return quotes if quotes else "No quotes found for the specified author."
         else:
             return "Author not found."
 
-    elif command.startswith("tag:"):
-        tag = command.split(":", 1)[1].strip()
-        quotes = Quote.objects(tags=tag)
-        return quotes
+    elif action == "tag":
+        quotes = Quote.objects(tags=value)
+        return quotes if quotes else "No quotes found for the specified tag."
 
-    elif command.startswith("tags:"):
-        tags = command.split(":", 1)[1].strip().split(",")
+    elif action == "tags":
+        tags = value.split(",")
         quotes = Quote.objects(tags__in=tags)
-        return quotes
+        return quotes if quotes else "No quotes found for the specified tags."
 
-    elif command.lower() == "exit":
+    elif action == "exit":
         return None
 
-    else:
-        return "Invalid command."
-
 if __name__ == "__main__":
-    connect("your_db_name", host="your_mongodb_atlas_uri")
+    connect("oleksander", host="mongodb+srv://olek:09093@oleksander.rvqf6dc.mongodb.net/")
 
     while True:
         user_input = input("Enter command: ")
@@ -42,4 +49,3 @@ if __name__ == "__main__":
         else:
             for quote in result:
                 print(f"{quote.author.fullname}: {quote.quote}")
-

@@ -37,5 +37,5 @@ if __name__ == "__main__":
 
     channel.basic_consume(queue=args.queue, on_message_callback=callback, auto_ack=True)
 
-    print(' [*] Очікуємо повідомлення. Щоб вийти - натисність CTRL+C')
+    print(' [*] В очікуванні повідомлень. Щоб вийти - натисність CTRL+C')
     channel.start_consuming()
