@@ -34,3 +34,5 @@ channel.basic_consume(queue='contacts_queue', on_message_callback=callback)
 
 print("Consumer: Очікуємо повідомлень. Для виходу натисніть Ctrl+C")
 channel.start_consuming()
+
+#done

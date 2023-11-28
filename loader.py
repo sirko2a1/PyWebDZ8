@@ -36,3 +36,5 @@ def load_qoutes():
 if __name__ == "__main__":
     load_authors()
     load_qoutes()
+
+#done

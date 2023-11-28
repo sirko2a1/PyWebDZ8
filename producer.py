@@ -36,3 +36,5 @@ print("Producer: контакти створено та надіслано до 
 
 
 connection.close()
+
+#done

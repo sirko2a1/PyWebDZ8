@@ -49,3 +49,5 @@ if __name__ == "__main__":
         else:
             for quote in result:
                 print(f"{quote.author.fullname}: {quote.quote}")
+
+#done

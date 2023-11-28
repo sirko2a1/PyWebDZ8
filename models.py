@@ -17,3 +17,4 @@ class Contact(Document):
     message_sent = BooleanField(default=False)
     meta = {'auto_create_index': False}
 
+#done
