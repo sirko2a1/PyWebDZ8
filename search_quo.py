@@ -38,7 +38,7 @@ if __name__ == "__main__":
     connect("oleksander", host="mongodb+srv://olek:09093@oleksander.rvqf6dc.mongodb.net/")
 
     while True:
-        user_input = input("Enter command: ")
+        user_input = input("Введіть команду (приклад: tag:world): ")
         result = search_quotes(user_input)
         
         if result is None:
